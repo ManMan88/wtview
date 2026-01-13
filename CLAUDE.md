@@ -17,6 +17,9 @@ Git Worktree Manager - a cross-platform GUI application for managing git worktre
 ## Development Commands
 
 ```bash
+# source cargo
+source "$HOME/.cargo/env"
+
 # Start development server (frontend + backend hot reload)
 npm run tauri dev
 
