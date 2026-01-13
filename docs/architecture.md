@@ -157,39 +157,43 @@ pub type AppResult<T> = Result<T, AppError>;
 
 ## Frontend Architecture
 
-### Directory Structure (Planned)
+### Directory Structure
 
 ```
 src/
 ├── main.tsx             # Application entry point
-├── App.tsx              # Root component
+├── App.tsx              # Root component with layout orchestration
 ├── styles/
 │   └── globals.css      # Tailwind imports and global styles
 ├── components/
 │   ├── ui/              # shadcn/ui components (do not modify)
 │   ├── layout/          # Layout components
-│   │   ├── Header.tsx
-│   │   ├── Sidebar.tsx
-│   │   └── MainContent.tsx
+│   │   ├── Header.tsx       # App header with repo selection
+│   │   ├── Sidebar.tsx      # Worktree list sidebar
+│   │   ├── MainContent.tsx  # Selected worktree details
+│   │   └── index.ts         # Re-exports
 │   ├── worktree/        # Worktree-specific components
-│   │   ├── WorktreeList.tsx
-│   │   ├── WorktreeCard.tsx
-│   │   ├── AddWorktreeDialog.tsx
-│   │   └── DeleteWorktreeDialog.tsx
-│   └── git/             # Git operation components
+│   │   ├── WorktreeList.tsx     # List with loading/error states
+│   │   ├── WorktreeCard.tsx     # Individual worktree display
+│   │   ├── AddWorktreeDialog.tsx    # Create new worktree
+│   │   ├── DeleteWorktreeDialog.tsx # Delete with confirmation
+│   │   └── index.ts         # Re-exports
+│   └── git/             # Git operation components (Phase 4)
 │       ├── BranchSelector.tsx
 │       ├── CommitPanel.tsx
 │       └── RemoteActions.tsx
 ├── hooks/               # TanStack Query hooks
-│   ├── useWorktrees.ts
-│   ├── useGitOperations.ts
-│   └── useBranches.ts
+│   ├── useWorktrees.ts      # Worktree CRUD mutations
+│   ├── useGitOperations.ts  # Git status, fetch, pull, push, commit
+│   ├── useBranches.ts       # Branch listing and checkout
+│   └── index.ts             # Re-exports
 ├── stores/              # Zustand stores
-│   └── appStore.ts
+│   └── appStore.ts      # App state with localStorage persistence
 ├── lib/                 # Utilities
+│   ├── utils.ts         # cn() helper for class merging
 │   └── tauri.ts         # Typed Tauri invoke wrappers
 └── types/               # TypeScript definitions
-    └── api.ts           # API types matching Rust structs
+    └── worktree.ts      # Re-exports from tauri.ts
 ```
 
 ### State Management Strategy
@@ -404,11 +408,11 @@ mod tests {
 - Error handling
 - Safety checks (uncommitted changes)
 
-### Frontend Tests (Planned)
+### Frontend Tests
 
-- Component tests with React Testing Library
-- Hook tests with @testing-library/react-hooks
-- Integration tests with Tauri mocking
+- Tauri API wrapper tests in `src/lib/tauri.test.ts` (70+ tests)
+- Uses Vitest with mocked Tauri invoke calls
+- Component tests with React Testing Library (planned)
 
 ### Running Tests
 
@@ -416,7 +420,7 @@ mod tests {
 # Rust tests
 cd src-tauri && cargo test
 
-# Frontend tests (when implemented)
+# Frontend tests
 npm test
 ```
 
