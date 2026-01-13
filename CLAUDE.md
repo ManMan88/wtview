@@ -126,14 +126,18 @@ See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the full implementation plan.
   - Branch operations: list, checkout
   - Unit tests for worktree management
 
+- [x] **Phase 3:** Frontend - Core UI
+  - Zustand store for app state (`stores/appStore.ts`)
+  - TanStack Query hooks for data fetching (`hooks/useWorktrees.ts`, `useBranches.ts`, `useGitOperations.ts`)
+  - Layout components (`components/layout/Header.tsx`, `Sidebar.tsx`, `MainContent.tsx`)
+  - WorktreeList and WorktreeCard components (`components/worktree/`)
+  - AddWorktreeDialog and DeleteWorktreeDialog
+
 ### Next Phase
 
-- [ ] **Phase 3:** Frontend - Core UI
-  - Zustand store for app state
-  - TanStack Query hooks for data fetching
-  - Layout components (Header, Sidebar, MainContent)
-  - WorktreeList and WorktreeCard components
-  - AddWorktreeDialog and DeleteWorktreeDialog
+- [ ] **Phase 4:** Git Operations
+  - Build frontend components for git operations (RemoteActions, CommitPanel)
+  - Add branch checkout functionality with BranchSelector
 
 ## Test Coverage
 
