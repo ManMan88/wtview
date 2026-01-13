@@ -31,7 +31,35 @@ npm run dev
 
 # Type check
 npm run build
+
+# Format code
+cargo fmt                    # Rust
+npm run format               # TypeScript (Prettier)
 ```
+
+## Coding Standards
+
+**All code must follow the project style guides:**
+
+- **Rust:** [docs/rust-style-guide.md](docs/rust-style-guide.md)
+- **TypeScript/React:** [docs/typescript-style-guide.md](docs/typescript-style-guide.md)
+
+### Key Style Rules
+
+#### Rust
+- Use `rustfmt` with defaults
+- Types: `PascalCase`, functions/variables: `snake_case`
+- Error handling: `thiserror` with `Serialize` for Tauri
+- Imports: std → external crates → crate-local
+- Tests: `#[tokio::test]` with `tempfile` for git repos
+
+#### TypeScript/React
+- Use Prettier (single quotes, trailing commas)
+- Components: `PascalCase`, hooks: `camelCase` with `use` prefix
+- Props interfaces: `PascalCase` with `Props` suffix
+- State: server data in TanStack Query, UI state in Zustand
+- Styling: Tailwind classes with `cn()` for conditionals
+- Imports: React → external → internal → types (use `import type`)
 
 ## Architecture
 
@@ -48,18 +76,32 @@ npm run build
 
 ### Frontend (src/)
 
-- `components/ui/` - shadcn/ui components
+- `components/ui/` - shadcn/ui components (do not modify)
 - `components/worktree/` - Worktree list, cards, dialogs
 - `components/git/` - Git operation UI (commit panel, branch selector)
 - `hooks/` - TanStack Query hooks for Tauri commands
 - `stores/` - Zustand store for UI state (selected repo, selected worktree)
+- `types/` - TypeScript type definitions matching Rust structs
 
 ### Data Flow
 
-Frontend components → TanStack Query hooks → `invoke()` IPC → Tauri commands → Git layer → git2/CLI
+```
+Frontend components → TanStack Query hooks → invoke() IPC → Tauri commands → Git layer → git2/CLI
+```
 
 ## Key Files
 
 - `src-tauri/tauri.conf.json` - Tauri config (window settings, bundle config, permissions)
 - `src-tauri/capabilities/default.json` - Permission capabilities for file/shell access
 - `src/lib/tauri.ts` - Typed wrappers around Tauri invoke calls
+- `src/stores/appStore.ts` - Zustand store with persistence
+
+## Skills
+
+Specialized Claude Code skills are available in `.claude/skills/`:
+
+- `architect.md` - High-level design decisions, architecture patterns
+- `backend.md` - Rust/Tauri development patterns
+- `frontend.md` - React/TypeScript/shadcn-ui patterns
+- `git-specialist.md` - Git worktree internals, git2 crate usage
+- `testing.md` - Test strategies for Rust and React
