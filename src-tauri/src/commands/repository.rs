@@ -20,15 +20,17 @@ pub async fn select_repository(app: tauri::AppHandle) -> AppResult<Option<Reposi
         .blocking_pick_folder();
 
     match folder {
-        Some(path) => {
-            let path_str = path.to_string();
+        Some(file_path) => {
+            let path_str = file_path.to_string();
 
             // Validate that this is a git repository
             let repo = validate_repository(&path_str)?;
 
-            let name = path
-                .file_name()
-                .map(|s| s.to_string())
+            let name = file_path
+                .as_path()
+                .and_then(|p| p.file_name())
+                .and_then(|s| s.to_str())
+                .map(String::from)
                 .unwrap_or_else(|| "Unknown".to_string());
 
             Ok(Some(RepositoryInfo {

@@ -83,9 +83,10 @@ describe("cn utility function", () => {
     expect(result).toBe("");
   });
 
-  it("deduplicates identical classes", () => {
-    const result = cn("class1", "class1");
-    expect(result).toBe("class1");
+  it("deduplicates identical Tailwind classes", () => {
+    // tailwind-merge only deduplicates Tailwind utility classes, not arbitrary class names
+    const result = cn("bg-red-500", "bg-red-500");
+    expect(result).toBe("bg-red-500");
   });
 
   it("handles complex Tailwind variants", () => {

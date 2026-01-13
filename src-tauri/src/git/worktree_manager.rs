@@ -68,7 +68,7 @@ pub fn list_worktrees(repo_path: &str) -> AppResult<Vec<WorktreeInfo>> {
                 path: wt_path,
                 branch,
                 is_main: false,
-                is_locked: wt.is_locked(),
+                is_locked: wt.is_locked().map(|s| matches!(s, git2::WorktreeLockStatus::Locked(_))).unwrap_or(false),
             });
         }
     }
