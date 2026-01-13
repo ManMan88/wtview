@@ -15,8 +15,20 @@ pub enum AppError {
     #[error("Invalid path: {0}")]
     InvalidPath(String),
 
+    #[error("Not a git repository: {0}")]
+    NotARepository(String),
+
     #[error("Worktree has uncommitted changes")]
     UncommittedChanges,
+
+    #[error("Worktree is locked: {0}")]
+    WorktreeLocked(String),
+
+    #[error("Branch already checked out in another worktree: {0}")]
+    BranchInUse(String),
+
+    #[error("Worktree not found: {0}")]
+    WorktreeNotFound(String),
 
     #[error("{0}")]
     Other(String),

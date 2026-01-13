@@ -28,3 +28,21 @@ pub async fn add_worktree(
 pub async fn remove_worktree(repo_path: String, worktree_path: String, force: bool) -> AppResult<()> {
     crate::git::worktree_manager::remove_worktree(&repo_path, &worktree_path, force)
 }
+
+#[tauri::command]
+pub async fn lock_worktree(
+    repo_path: String,
+    worktree_path: String,
+    reason: Option<String>,
+) -> AppResult<()> {
+    crate::git::worktree_manager::lock_worktree(
+        &repo_path,
+        &worktree_path,
+        reason.as_deref(),
+    )
+}
+
+#[tauri::command]
+pub async fn unlock_worktree(repo_path: String, worktree_path: String) -> AppResult<()> {
+    crate::git::worktree_manager::unlock_worktree(&repo_path, &worktree_path)
+}

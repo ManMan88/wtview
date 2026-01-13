@@ -66,10 +66,13 @@ npm run format               # TypeScript (Prettier)
 ### Backend (src-tauri/src/)
 
 - `commands/` - Tauri command handlers exposed to frontend via IPC
-  - `worktree.rs` - list, add, remove worktrees
-  - `git_ops.rs` - fetch, pull, push, commit operations
+  - `repository.rs` - repository selection via file dialog, validation
+  - `worktree.rs` - list, add, remove, lock, unlock worktrees
+  - `git_ops.rs` - fetch, pull, push, commit, stage/unstage operations
   - `branches.rs` - branch listing and checkout
 - `git/` - Git abstraction layer
+  - `worktree_manager.rs` - worktree CRUD operations with safety checks
+  - `operations.rs` - git operations (status, branches, remote ops)
   - Uses **git2 crate** for read operations (listing, status, branch info)
   - Uses **command-line git** for write operations (add/remove worktree, push/pull/fetch) to leverage system credentials
 - `error.rs` - Error types with Tauri serialization
@@ -105,3 +108,29 @@ Specialized Claude Code skills are available in `.claude/skills/`:
 - `frontend.md` - React/TypeScript/shadcn-ui patterns
 - `git-specialist.md` - Git worktree internals, git2 crate usage
 - `testing.md` - Test strategies for Rust and React
+
+## Implementation Progress
+
+See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the full implementation plan.
+
+### Completed Phases
+
+- [x] **Phase 0:** Initial Repository Setup - `.gitignore`, docs, project plan
+- [x] **Phase 1:** Project Setup - Tauri v2, React, TypeScript, Tailwind CSS v4, shadcn/ui
+- [x] **Phase 2:** Rust Backend Core
+  - Error types with Tauri serialization (`error.rs`)
+  - WorktreeManager with git2 integration (`git/worktree_manager.rs`)
+  - Repository selection via file dialog (`commands/repository.rs`)
+  - Worktree commands: list, add, remove, lock, unlock
+  - Git operations: fetch, pull, push, status, commit, stage, unstage
+  - Branch operations: list, checkout
+  - Unit tests for worktree management
+
+### Next Phase
+
+- [ ] **Phase 3:** Frontend - Core UI
+  - Zustand store for app state
+  - TanStack Query hooks for data fetching
+  - Layout components (Header, Sidebar, MainContent)
+  - WorktreeList and WorktreeCard components
+  - AddWorktreeDialog and DeleteWorktreeDialog

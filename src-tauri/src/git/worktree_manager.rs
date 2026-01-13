@@ -1,10 +1,37 @@
 use crate::commands::worktree::WorktreeInfo;
 use crate::error::{AppError, AppResult};
-use git2::Repository;
+use git2::{Repository, StatusOptions};
+use std::path::Path;
 use std::process::Command;
 
+/// Validates that the given path is a valid git repository
+pub fn validate_repository(repo_path: &str) -> AppResult<Repository> {
+    let path = Path::new(repo_path);
+    if !path.exists() {
+        return Err(AppError::InvalidPath(format!(
+            "Path does not exist: {}",
+            repo_path
+        )));
+    }
+
+    Repository::open(repo_path)
+        .map_err(|_| AppError::NotARepository(repo_path.to_string()))
+}
+
+/// Checks if a worktree has uncommitted changes
+pub fn has_uncommitted_changes(worktree_path: &str) -> AppResult<bool> {
+    let repo = Repository::open(worktree_path)?;
+
+    let mut opts = StatusOptions::new();
+    opts.include_untracked(true);
+    opts.recurse_untracked_dirs(false);
+
+    let statuses = repo.statuses(Some(&mut opts))?;
+    Ok(!statuses.is_empty())
+}
+
 pub fn list_worktrees(repo_path: &str) -> AppResult<Vec<WorktreeInfo>> {
-    let repo = Repository::open(repo_path)?;
+    let repo = validate_repository(repo_path)?;
     let mut worktrees = Vec::new();
 
     // Get the main worktree
@@ -29,7 +56,10 @@ pub fn list_worktrees(repo_path: &str) -> AppResult<Vec<WorktreeInfo>> {
 
             // Try to get branch info from the worktree
             let branch = if let Ok(wt_repo) = Repository::open(wt.path()) {
-                wt_repo.head().ok().and_then(|h| h.shorthand().map(String::from))
+                wt_repo
+                    .head()
+                    .ok()
+                    .and_then(|h| h.shorthand().map(String::from))
             } else {
                 None
             };
@@ -52,6 +82,9 @@ pub fn add_worktree(
     branch: &str,
     create_branch: bool,
 ) -> AppResult<()> {
+    // Validate the repository first
+    validate_repository(repo_path)?;
+
     let mut cmd = Command::new("git");
     cmd.current_dir(repo_path);
     cmd.args(["worktree", "add"]);
@@ -66,13 +99,45 @@ pub fn add_worktree(
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Command(stderr.to_string()));
+        let error_msg = stderr.to_string();
+
+        // Check for specific error conditions
+        if error_msg.contains("already checked out") {
+            return Err(AppError::BranchInUse(branch.to_string()));
+        }
+
+        return Err(AppError::Command(error_msg));
     }
 
     Ok(())
 }
 
 pub fn remove_worktree(repo_path: &str, worktree_path: &str, force: bool) -> AppResult<()> {
+    // Validate the repository first
+    let repo = validate_repository(repo_path)?;
+
+    // Check if the worktree exists
+    let worktree_exists = repo
+        .worktrees()?
+        .iter()
+        .flatten()
+        .any(|name| {
+            repo.find_worktree(name)
+                .map(|wt| wt.path().to_string_lossy() == worktree_path)
+                .unwrap_or(false)
+        });
+
+    if !worktree_exists {
+        return Err(AppError::WorktreeNotFound(worktree_path.to_string()));
+    }
+
+    // Check for uncommitted changes if not forcing
+    if !force {
+        if has_uncommitted_changes(worktree_path)? {
+            return Err(AppError::UncommittedChanges);
+        }
+    }
+
     let mut cmd = Command::new("git");
     cmd.current_dir(repo_path);
     cmd.args(["worktree", "remove"]);
@@ -91,4 +156,227 @@ pub fn remove_worktree(repo_path: &str, worktree_path: &str, force: bool) -> App
     }
 
     Ok(())
+}
+
+pub fn lock_worktree(repo_path: &str, worktree_path: &str, reason: Option<&str>) -> AppResult<()> {
+    validate_repository(repo_path)?;
+
+    let mut cmd = Command::new("git");
+    cmd.current_dir(repo_path);
+    cmd.args(["worktree", "lock"]);
+
+    if let Some(reason) = reason {
+        cmd.args(["--reason", reason]);
+    }
+
+    cmd.arg(worktree_path);
+
+    let output = cmd.output()?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(AppError::Command(stderr.to_string()));
+    }
+
+    Ok(())
+}
+
+pub fn unlock_worktree(repo_path: &str, worktree_path: &str) -> AppResult<()> {
+    validate_repository(repo_path)?;
+
+    let mut cmd = Command::new("git");
+    cmd.current_dir(repo_path);
+    cmd.args(["worktree", "unlock", worktree_path]);
+
+    let output = cmd.output()?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(AppError::Command(stderr.to_string()));
+    }
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::process::Command as StdCommand;
+    use tempfile::TempDir;
+
+    /// Helper to create a test git repository
+    fn create_test_repo() -> TempDir {
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
+
+        StdCommand::new("git")
+            .current_dir(temp_dir.path())
+            .args(["init"])
+            .output()
+            .expect("Failed to init repo");
+
+        StdCommand::new("git")
+            .current_dir(temp_dir.path())
+            .args(["config", "user.email", "test@test.com"])
+            .output()
+            .expect("Failed to set email");
+
+        StdCommand::new("git")
+            .current_dir(temp_dir.path())
+            .args(["config", "user.name", "Test User"])
+            .output()
+            .expect("Failed to set name");
+
+        // Create an initial commit so we have a valid HEAD
+        let test_file = temp_dir.path().join("README.md");
+        fs::write(&test_file, "# Test Repository").expect("Failed to write file");
+
+        StdCommand::new("git")
+            .current_dir(temp_dir.path())
+            .args(["add", "."])
+            .output()
+            .expect("Failed to add files");
+
+        StdCommand::new("git")
+            .current_dir(temp_dir.path())
+            .args(["commit", "-m", "Initial commit"])
+            .output()
+            .expect("Failed to commit");
+
+        temp_dir
+    }
+
+    #[test]
+    fn test_validate_repository_success() {
+        let temp_dir = create_test_repo();
+        let result = validate_repository(temp_dir.path().to_str().unwrap());
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_repository_not_a_repo() {
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
+        let result = validate_repository(temp_dir.path().to_str().unwrap());
+        assert!(matches!(result, Err(AppError::NotARepository(_))));
+    }
+
+    #[test]
+    fn test_validate_repository_invalid_path() {
+        let result = validate_repository("/nonexistent/path/to/repo");
+        assert!(matches!(result, Err(AppError::InvalidPath(_))));
+    }
+
+    #[test]
+    fn test_list_worktrees_main_only() {
+        let temp_dir = create_test_repo();
+        let worktrees = list_worktrees(temp_dir.path().to_str().unwrap())
+            .expect("Failed to list worktrees");
+
+        assert_eq!(worktrees.len(), 1);
+        assert!(worktrees[0].is_main);
+        assert!(worktrees[0].branch.is_some());
+    }
+
+    #[test]
+    fn test_add_and_list_worktree() {
+        let temp_dir = create_test_repo();
+        let repo_path = temp_dir.path().to_str().unwrap();
+
+        // Create a new worktree with a new branch
+        let worktree_path = temp_dir.path().join("worktree-feature");
+        add_worktree(
+            repo_path,
+            worktree_path.to_str().unwrap(),
+            "feature-branch",
+            true,
+        )
+        .expect("Failed to add worktree");
+
+        // Verify the worktree was created
+        let worktrees = list_worktrees(repo_path).expect("Failed to list worktrees");
+        assert_eq!(worktrees.len(), 2);
+
+        // Find the new worktree
+        let new_worktree = worktrees.iter().find(|wt| !wt.is_main);
+        assert!(new_worktree.is_some());
+        assert_eq!(new_worktree.unwrap().branch, Some("feature-branch".to_string()));
+    }
+
+    #[test]
+    fn test_remove_worktree() {
+        let temp_dir = create_test_repo();
+        let repo_path = temp_dir.path().to_str().unwrap();
+
+        // Create a worktree
+        let worktree_path = temp_dir.path().join("worktree-to-remove");
+        add_worktree(
+            repo_path,
+            worktree_path.to_str().unwrap(),
+            "temp-branch",
+            true,
+        )
+        .expect("Failed to add worktree");
+
+        // Remove it
+        remove_worktree(repo_path, worktree_path.to_str().unwrap(), false)
+            .expect("Failed to remove worktree");
+
+        // Verify it's gone
+        let worktrees = list_worktrees(repo_path).expect("Failed to list worktrees");
+        assert_eq!(worktrees.len(), 1);
+        assert!(worktrees[0].is_main);
+    }
+
+    #[test]
+    fn test_has_uncommitted_changes() {
+        let temp_dir = create_test_repo();
+        let repo_path = temp_dir.path().to_str().unwrap();
+
+        // Initially should have no uncommitted changes
+        assert!(!has_uncommitted_changes(repo_path).expect("Failed to check changes"));
+
+        // Create a new file
+        let new_file = temp_dir.path().join("new_file.txt");
+        fs::write(&new_file, "New content").expect("Failed to write file");
+
+        // Now should have uncommitted changes
+        assert!(has_uncommitted_changes(repo_path).expect("Failed to check changes"));
+    }
+
+    #[test]
+    fn test_remove_worktree_with_uncommitted_changes_fails() {
+        let temp_dir = create_test_repo();
+        let repo_path = temp_dir.path().to_str().unwrap();
+
+        // Create a worktree
+        let worktree_path = temp_dir.path().join("worktree-dirty");
+        add_worktree(
+            repo_path,
+            worktree_path.to_str().unwrap(),
+            "dirty-branch",
+            true,
+        )
+        .expect("Failed to add worktree");
+
+        // Create uncommitted changes in the worktree
+        let new_file = worktree_path.join("uncommitted.txt");
+        fs::write(&new_file, "Uncommitted content").expect("Failed to write file");
+
+        // Try to remove without force - should fail
+        let result = remove_worktree(repo_path, worktree_path.to_str().unwrap(), false);
+        assert!(matches!(result, Err(AppError::UncommittedChanges)));
+
+        // Remove with force - should succeed
+        remove_worktree(repo_path, worktree_path.to_str().unwrap(), true)
+            .expect("Failed to force remove worktree");
+    }
+
+    #[test]
+    fn test_remove_worktree_not_found() {
+        let temp_dir = create_test_repo();
+        let repo_path = temp_dir.path().to_str().unwrap();
+
+        let result = remove_worktree(repo_path, "/nonexistent/worktree", false);
+        assert!(matches!(result, Err(AppError::WorktreeNotFound(_))));
+    }
 }
