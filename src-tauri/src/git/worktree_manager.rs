@@ -208,43 +208,46 @@ mod tests {
     /// Helper to create a test git repository
     fn create_test_repo() -> TempDir {
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
+        let repo_path = temp_dir.path();
 
         StdCommand::new("git")
-            .current_dir(temp_dir.path())
+            .current_dir(repo_path)
             .args(["init"])
             .output()
             .expect("Failed to init repo");
 
         StdCommand::new("git")
-            .current_dir(temp_dir.path())
+            .current_dir(repo_path)
             .args(["config", "user.email", "test@test.com"])
             .output()
             .expect("Failed to set email");
 
         StdCommand::new("git")
-            .current_dir(temp_dir.path())
+            .current_dir(repo_path)
             .args(["config", "user.name", "Test User"])
             .output()
             .expect("Failed to set name");
 
         // Create an initial commit so we have a valid HEAD
-        let test_file = temp_dir.path().join("README.md");
+        let test_file = repo_path.join("README.md");
         fs::write(&test_file, "# Test Repository").expect("Failed to write file");
 
         StdCommand::new("git")
-            .current_dir(temp_dir.path())
+            .current_dir(repo_path)
             .args(["add", "."])
             .output()
             .expect("Failed to add files");
 
         StdCommand::new("git")
-            .current_dir(temp_dir.path())
+            .current_dir(repo_path)
             .args(["commit", "-m", "Initial commit"])
             .output()
             .expect("Failed to commit");
 
         temp_dir
     }
+
+    // ==================== Validation Tests ====================
 
     #[test]
     fn test_validate_repository_success() {
@@ -266,31 +269,88 @@ mod tests {
         assert!(matches!(result, Err(AppError::InvalidPath(_))));
     }
 
+    // ==================== List Worktrees Tests ====================
+
     #[test]
     fn test_list_worktrees_main_only() {
         let temp_dir = create_test_repo();
-        let worktrees = list_worktrees(temp_dir.path().to_str().unwrap())
-            .expect("Failed to list worktrees");
+        let repo_path = temp_dir.path().to_str().unwrap();
+
+        let worktrees = list_worktrees(repo_path).expect("Failed to list worktrees");
 
         assert_eq!(worktrees.len(), 1);
         assert!(worktrees[0].is_main);
+        assert!(!worktrees[0].is_locked);
         assert!(worktrees[0].branch.is_some());
     }
 
     #[test]
-    fn test_add_and_list_worktree() {
+    fn test_list_worktrees_with_linked_worktree() {
         let temp_dir = create_test_repo();
         let repo_path = temp_dir.path().to_str().unwrap();
 
-        // Create a new worktree with a new branch
-        let worktree_path = temp_dir.path().join("worktree-feature");
-        add_worktree(
+        // Create a feature branch
+        StdCommand::new("git")
+            .current_dir(repo_path)
+            .args(["branch", "feature-branch"])
+            .output()
+            .expect("Failed to create branch");
+
+        // Create a linked worktree
+        let worktree_path = temp_dir.path().parent().unwrap().join("feature-worktree");
+        StdCommand::new("git")
+            .current_dir(repo_path)
+            .args([
+                "worktree",
+                "add",
+                worktree_path.to_str().unwrap(),
+                "feature-branch",
+            ])
+            .output()
+            .expect("Failed to create worktree");
+
+        let worktrees = list_worktrees(repo_path).expect("Failed to list worktrees");
+
+        assert_eq!(worktrees.len(), 2);
+
+        let main_wt = worktrees.iter().find(|w| w.is_main).unwrap();
+        assert!(main_wt.is_main);
+
+        let linked_wt = worktrees.iter().find(|w| !w.is_main).unwrap();
+        assert!(!linked_wt.is_main);
+        assert_eq!(linked_wt.branch.as_deref(), Some("feature-branch"));
+
+        // Cleanup
+        StdCommand::new("git")
+            .current_dir(repo_path)
+            .args(["worktree", "remove", worktree_path.to_str().unwrap()])
+            .output()
+            .expect("Failed to remove worktree");
+    }
+
+    #[test]
+    fn test_list_worktrees_invalid_path() {
+        let result = list_worktrees("/nonexistent/path");
+        assert!(result.is_err());
+    }
+
+    // ==================== Add Worktree Tests ====================
+
+    #[test]
+    fn test_add_worktree_with_new_branch() {
+        let temp_dir = create_test_repo();
+        let repo_path = temp_dir.path().to_str().unwrap();
+        let worktree_path = temp_dir.path().parent().unwrap().join("new-feature");
+
+        let result = add_worktree(
             repo_path,
             worktree_path.to_str().unwrap(),
-            "feature-branch",
+            "new-feature-branch",
             true,
-        )
-        .expect("Failed to add worktree");
+        );
+
+        assert!(result.is_ok());
+        assert!(worktree_path.exists());
 
         // Verify the worktree was created
         let worktrees = list_worktrees(repo_path).expect("Failed to list worktrees");
@@ -299,48 +359,99 @@ mod tests {
         // Find the new worktree
         let new_worktree = worktrees.iter().find(|wt| !wt.is_main);
         assert!(new_worktree.is_some());
-        assert_eq!(new_worktree.unwrap().branch, Some("feature-branch".to_string()));
+        assert_eq!(
+            new_worktree.unwrap().branch,
+            Some("new-feature-branch".to_string())
+        );
+
+        // Cleanup
+        StdCommand::new("git")
+            .current_dir(repo_path)
+            .args(["worktree", "remove", worktree_path.to_str().unwrap()])
+            .output()
+            .expect("Failed to remove worktree");
     }
+
+    #[test]
+    fn test_add_worktree_existing_branch() {
+        let temp_dir = create_test_repo();
+        let repo_path = temp_dir.path().to_str().unwrap();
+
+        // Create a branch first
+        StdCommand::new("git")
+            .current_dir(repo_path)
+            .args(["branch", "existing-branch"])
+            .output()
+            .expect("Failed to create branch");
+
+        let worktree_path = temp_dir.path().parent().unwrap().join("existing-wt");
+
+        let result = add_worktree(
+            repo_path,
+            worktree_path.to_str().unwrap(),
+            "existing-branch",
+            false,
+        );
+
+        assert!(result.is_ok());
+        assert!(worktree_path.exists());
+
+        // Cleanup
+        StdCommand::new("git")
+            .current_dir(repo_path)
+            .args(["worktree", "remove", worktree_path.to_str().unwrap()])
+            .output()
+            .expect("Failed to remove worktree");
+    }
+
+    #[test]
+    fn test_add_worktree_invalid_branch() {
+        let temp_dir = create_test_repo();
+        let repo_path = temp_dir.path().to_str().unwrap();
+        let worktree_path = temp_dir.path().parent().unwrap().join("invalid-wt");
+
+        let result = add_worktree(
+            repo_path,
+            worktree_path.to_str().unwrap(),
+            "nonexistent-branch",
+            false,
+        );
+
+        assert!(result.is_err());
+    }
+
+    // ==================== Remove Worktree Tests ====================
 
     #[test]
     fn test_remove_worktree() {
         let temp_dir = create_test_repo();
         let repo_path = temp_dir.path().to_str().unwrap();
 
-        // Create a worktree
-        let worktree_path = temp_dir.path().join("worktree-to-remove");
-        add_worktree(
-            repo_path,
-            worktree_path.to_str().unwrap(),
-            "temp-branch",
-            true,
-        )
-        .expect("Failed to add worktree");
+        // Create a worktree first
+        StdCommand::new("git")
+            .current_dir(repo_path)
+            .args(["branch", "to-remove"])
+            .output()
+            .expect("Failed to create branch");
 
-        // Remove it
-        remove_worktree(repo_path, worktree_path.to_str().unwrap(), false)
-            .expect("Failed to remove worktree");
+        let worktree_path = temp_dir.path().parent().unwrap().join("to-remove-wt");
+        StdCommand::new("git")
+            .current_dir(repo_path)
+            .args([
+                "worktree",
+                "add",
+                worktree_path.to_str().unwrap(),
+                "to-remove",
+            ])
+            .output()
+            .expect("Failed to create worktree");
 
-        // Verify it's gone
-        let worktrees = list_worktrees(repo_path).expect("Failed to list worktrees");
-        assert_eq!(worktrees.len(), 1);
-        assert!(worktrees[0].is_main);
-    }
+        assert!(worktree_path.exists());
 
-    #[test]
-    fn test_has_uncommitted_changes() {
-        let temp_dir = create_test_repo();
-        let repo_path = temp_dir.path().to_str().unwrap();
+        let result = remove_worktree(repo_path, worktree_path.to_str().unwrap(), false);
 
-        // Initially should have no uncommitted changes
-        assert!(!has_uncommitted_changes(repo_path).expect("Failed to check changes"));
-
-        // Create a new file
-        let new_file = temp_dir.path().join("new_file.txt");
-        fs::write(&new_file, "New content").expect("Failed to write file");
-
-        // Now should have uncommitted changes
-        assert!(has_uncommitted_changes(repo_path).expect("Failed to check changes"));
+        assert!(result.is_ok());
+        assert!(!worktree_path.exists());
     }
 
     #[test]
@@ -349,7 +460,7 @@ mod tests {
         let repo_path = temp_dir.path().to_str().unwrap();
 
         // Create a worktree
-        let worktree_path = temp_dir.path().join("worktree-dirty");
+        let worktree_path = temp_dir.path().parent().unwrap().join("worktree-dirty");
         add_worktree(
             repo_path,
             worktree_path.to_str().unwrap(),
@@ -372,11 +483,62 @@ mod tests {
     }
 
     #[test]
+    fn test_remove_worktree_force() {
+        let temp_dir = create_test_repo();
+        let repo_path = temp_dir.path().to_str().unwrap();
+
+        // Create a worktree
+        StdCommand::new("git")
+            .current_dir(repo_path)
+            .args(["branch", "force-remove"])
+            .output()
+            .expect("Failed to create branch");
+
+        let worktree_path = temp_dir.path().parent().unwrap().join("force-remove-wt");
+        StdCommand::new("git")
+            .current_dir(repo_path)
+            .args([
+                "worktree",
+                "add",
+                worktree_path.to_str().unwrap(),
+                "force-remove",
+            ])
+            .output()
+            .expect("Failed to create worktree");
+
+        // Create uncommitted changes
+        let test_file = worktree_path.join("uncommitted.txt");
+        fs::write(&test_file, "uncommitted content").expect("Failed to write file");
+
+        // Force remove should work
+        let result = remove_worktree(repo_path, worktree_path.to_str().unwrap(), true);
+        assert!(result.is_ok());
+    }
+
+    #[test]
     fn test_remove_worktree_not_found() {
         let temp_dir = create_test_repo();
         let repo_path = temp_dir.path().to_str().unwrap();
 
         let result = remove_worktree(repo_path, "/nonexistent/worktree", false);
         assert!(matches!(result, Err(AppError::WorktreeNotFound(_))));
+    }
+
+    // ==================== Uncommitted Changes Tests ====================
+
+    #[test]
+    fn test_has_uncommitted_changes() {
+        let temp_dir = create_test_repo();
+        let repo_path = temp_dir.path().to_str().unwrap();
+
+        // Initially should have no uncommitted changes
+        assert!(!has_uncommitted_changes(repo_path).expect("Failed to check changes"));
+
+        // Create a new file
+        let new_file = temp_dir.path().join("new_file.txt");
+        fs::write(&new_file, "New content").expect("Failed to write file");
+
+        // Now should have uncommitted changes
+        assert!(has_uncommitted_changes(repo_path).expect("Failed to check changes"));
     }
 }
