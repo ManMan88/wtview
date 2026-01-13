@@ -265,7 +265,7 @@ Gets the current status of a worktree, including changed files and ahead/behind 
 ```typescript
 interface FileStatus {
   path: string;    // Relative path to the file
-  status: string;  // 'added' | 'modified' | 'deleted' | 'untracked'
+  status: string;  // 'added' | 'modified' | 'deleted' | 'untracked' | 'renamed' | 'typechange' | 'conflicted'
   staged: boolean; // True if file is staged for commit
 }
 
@@ -556,7 +556,7 @@ export interface WorktreeInfo {
 
 export interface FileStatus {
   path: string;
-  status: 'added' | 'modified' | 'deleted' | 'untracked';
+  status: 'added' | 'modified' | 'deleted' | 'untracked' | 'renamed' | 'typechange' | 'conflicted';
   staged: boolean;
 }
 

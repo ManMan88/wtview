@@ -134,3 +134,15 @@ See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the full implementation plan.
   - Layout components (Header, Sidebar, MainContent)
   - WorktreeList and WorktreeCard components
   - AddWorktreeDialog and DeleteWorktreeDialog
+
+## Test Coverage
+
+| Module | Tests | Description |
+|--------|-------|-------------|
+| `error.rs` | 17 | Error display, serialization, type conversion |
+| `worktree_manager.rs` | 24 | Worktree CRUD, lock/unlock, validation |
+| `operations.rs` | 19 | Git status, branches, stage/commit |
+| `tauri.test.ts` | 70 | Frontend API wrapper functions |
+| **Total** | **130+** | |
+
+Run tests: `cd src-tauri && cargo test` (backend) or `npm test` (frontend)

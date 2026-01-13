@@ -2,9 +2,30 @@ use crate::commands::branches::BranchInfo;
 use crate::commands::git_ops::{FileStatus, GitStatusResult};
 use crate::error::{AppError, AppResult};
 use git2::{Repository, StatusOptions};
+use std::path::Path;
 use std::process::Command;
 
+/// Validates that a worktree path exists and is a directory
+fn validate_worktree_path(worktree_path: &str) -> AppResult<()> {
+    let path = Path::new(worktree_path);
+    if !path.exists() {
+        return Err(AppError::InvalidPath(format!(
+            "Worktree path does not exist: {}",
+            worktree_path
+        )));
+    }
+    if !path.is_dir() {
+        return Err(AppError::InvalidPath(format!(
+            "Worktree path is not a directory: {}",
+            worktree_path
+        )));
+    }
+    Ok(())
+}
+
 pub fn fetch(worktree_path: &str) -> AppResult<String> {
+    validate_worktree_path(worktree_path)?;
+
     let output = Command::new("git")
         .current_dir(worktree_path)
         .args(["fetch", "--all"])
@@ -20,6 +41,8 @@ pub fn fetch(worktree_path: &str) -> AppResult<String> {
 }
 
 pub fn pull(worktree_path: &str) -> AppResult<String> {
+    validate_worktree_path(worktree_path)?;
+
     let output = Command::new("git")
         .current_dir(worktree_path)
         .args(["pull"])
@@ -35,6 +58,8 @@ pub fn pull(worktree_path: &str) -> AppResult<String> {
 }
 
 pub fn push(worktree_path: &str) -> AppResult<String> {
+    validate_worktree_path(worktree_path)?;
+
     let output = Command::new("git")
         .current_dir(worktree_path)
         .args(["push"])
@@ -66,27 +91,80 @@ pub fn status(worktree_path: &str) -> AppResult<GitStatusResult> {
         let path = entry.path().unwrap_or("").to_string();
         let status = entry.status();
 
-        let (status_str, staged) = if status.is_index_new() {
-            ("added", true)
+        // Handle staged (index) changes
+        if status.is_index_new() {
+            files.push(FileStatus {
+                path: path.clone(),
+                status: "added".to_string(),
+                staged: true,
+            });
         } else if status.is_index_modified() {
-            ("modified", true)
+            files.push(FileStatus {
+                path: path.clone(),
+                status: "modified".to_string(),
+                staged: true,
+            });
         } else if status.is_index_deleted() {
-            ("deleted", true)
-        } else if status.is_wt_new() {
-            ("untracked", false)
-        } else if status.is_wt_modified() {
-            ("modified", false)
-        } else if status.is_wt_deleted() {
-            ("deleted", false)
-        } else {
-            continue;
-        };
+            files.push(FileStatus {
+                path: path.clone(),
+                status: "deleted".to_string(),
+                staged: true,
+            });
+        } else if status.is_index_renamed() {
+            files.push(FileStatus {
+                path: path.clone(),
+                status: "renamed".to_string(),
+                staged: true,
+            });
+        } else if status.is_index_typechange() {
+            files.push(FileStatus {
+                path: path.clone(),
+                status: "typechange".to_string(),
+                staged: true,
+            });
+        }
 
-        files.push(FileStatus {
-            path,
-            status: status_str.to_string(),
-            staged,
-        });
+        // Handle unstaged (worktree) changes
+        if status.is_wt_new() {
+            files.push(FileStatus {
+                path: path.clone(),
+                status: "untracked".to_string(),
+                staged: false,
+            });
+        } else if status.is_wt_modified() {
+            files.push(FileStatus {
+                path: path.clone(),
+                status: "modified".to_string(),
+                staged: false,
+            });
+        } else if status.is_wt_deleted() {
+            files.push(FileStatus {
+                path: path.clone(),
+                status: "deleted".to_string(),
+                staged: false,
+            });
+        } else if status.is_wt_renamed() {
+            files.push(FileStatus {
+                path: path.clone(),
+                status: "renamed".to_string(),
+                staged: false,
+            });
+        } else if status.is_wt_typechange() {
+            files.push(FileStatus {
+                path: path.clone(),
+                status: "typechange".to_string(),
+                staged: false,
+            });
+        }
+
+        // Handle conflicted files
+        if status.is_conflicted() {
+            files.push(FileStatus {
+                path,
+                status: "conflicted".to_string(),
+                staged: false,
+            });
+        }
     }
 
     // Get ahead/behind counts
@@ -115,6 +193,8 @@ fn get_ahead_behind(repo: &Repository) -> Option<(u32, u32)> {
 }
 
 pub fn commit(worktree_path: &str, message: &str) -> AppResult<String> {
+    validate_worktree_path(worktree_path)?;
+
     let output = Command::new("git")
         .current_dir(worktree_path)
         .args(["commit", "-m", message])
@@ -130,6 +210,8 @@ pub fn commit(worktree_path: &str, message: &str) -> AppResult<String> {
 }
 
 pub fn stage(worktree_path: &str, file_path: &str) -> AppResult<()> {
+    validate_worktree_path(worktree_path)?;
+
     let output = Command::new("git")
         .current_dir(worktree_path)
         .args(["add", file_path])
@@ -144,6 +226,8 @@ pub fn stage(worktree_path: &str, file_path: &str) -> AppResult<()> {
 }
 
 pub fn unstage(worktree_path: &str, file_path: &str) -> AppResult<()> {
+    validate_worktree_path(worktree_path)?;
+
     let output = Command::new("git")
         .current_dir(worktree_path)
         .args(["restore", "--staged", file_path])
@@ -182,6 +266,8 @@ pub fn list_branches(repo_path: &str) -> AppResult<Vec<BranchInfo>> {
 }
 
 pub fn checkout(worktree_path: &str, branch: &str) -> AppResult<()> {
+    validate_worktree_path(worktree_path)?;
+
     let output = Command::new("git")
         .current_dir(worktree_path)
         .args(["checkout", branch])
