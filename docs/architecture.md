@@ -178,10 +178,11 @@ src/
 │   │   ├── AddWorktreeDialog.tsx    # Create new worktree
 │   │   ├── DeleteWorktreeDialog.tsx # Delete with confirmation
 │   │   └── index.ts         # Re-exports
-│   └── git/             # Git operation components (Phase 4)
-│       ├── BranchSelector.tsx
-│       ├── CommitPanel.tsx
-│       └── RemoteActions.tsx
+│   └── git/             # Git operation components
+│       ├── index.ts             # Re-exports
+│       ├── BranchSelector.tsx   # Branch checkout dropdown
+│       ├── CommitPanel.tsx      # File staging and commit
+│       └── RemoteActions.tsx    # Fetch/pull/push operations
 ├── hooks/               # TanStack Query hooks
 │   ├── useWorktrees.ts      # Worktree CRUD mutations
 │   ├── useGitOperations.ts  # Git status, fetch, pull, push, commit
@@ -239,6 +240,32 @@ export function WorktreeList() {
   );
 }
 ```
+
+### Git Operation Components
+
+The `components/git/` directory contains specialized components for git operations:
+
+#### RemoteActions
+Provides fetch, pull, and push functionality:
+- Three action buttons with loading states
+- Displays ahead/behind counts as badges on push/pull buttons
+- Shows last operation output in a monospace code block
+- Toast notifications for success/failure feedback
+
+#### CommitPanel
+Handles file staging and commit creation:
+- Displays staged and unstaged files in separate sections
+- Stage/unstage individual files or all at once
+- Color-coded status badges (M=modified, A=added, D=deleted, R=renamed, ?=untracked)
+- Commit message input with Enter key shortcut
+- Validation ensures message and staged files before commit
+
+#### BranchSelector
+Branch checkout with dropdown selector:
+- Groups branches into Local and Remote sections
+- Displays current branch prominently
+- Disables current branch in dropdown to prevent no-op checkout
+- Loading state during checkout operation
 
 ---
 
@@ -450,13 +477,21 @@ npm test
 
 ## Future Considerations
 
+### Completed Features
+
+- **File staging/unstaging** - Individual and bulk operations
+- **Commit creation** - With message input and validation
+- **Remote operations** - Fetch, pull, push with feedback
+- **Branch checkout** - With local/remote grouping
+- **Settings Persistence** - Recent repos stored in localStorage
+
 ### Potential Enhancements
 
 1. **File Watcher** - Auto-refresh on file system changes
 2. **Diff Viewer** - Show file diffs inline
 3. **Merge Conflict Resolution** - Visual merge tool
 4. **Git Graph** - Visualize commit history
-5. **Settings Persistence** - Remember window size, recent repos
+5. **Keyboard Shortcuts** - Quick actions for power users
 6. **Multi-Repository** - Manage multiple repos simultaneously
 
 ### Platform-Specific

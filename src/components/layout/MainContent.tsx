@@ -2,6 +2,7 @@ import { GitBranch, Folder, Lock, Unlock, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { RemoteActions, CommitPanel, BranchSelector } from '@/components/git';
 import { useAppStore } from '@/stores/appStore';
 import { useWorktrees, useLockWorktree, useUnlockWorktree } from '@/hooks/useWorktrees';
 import { useGitStatus } from '@/hooks/useGitOperations';
@@ -115,54 +116,79 @@ export function MainContent({ onDeleteWorktree }: MainContentProps) {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Branch</span>
-                <span>{status?.branch ?? 'Unknown'}</span>
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Left Column - Status and Info */}
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Branch</span>
+                  <span>{status?.branch ?? 'Unknown'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Ahead</span>
+                  <span>{status?.ahead ?? 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Behind</span>
+                  <span>{status?.behind ?? 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Staged</span>
+                  <span>{stagedFiles.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Unstaged</span>
+                  <span>{unstagedFiles.length}</span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Ahead</span>
-                <span>{status?.ahead ?? 0}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Behind</span>
-                <span>{status?.behind ?? 0}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Staged</span>
-                <span>{stagedFiles.length}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Unstaged</span>
-                <span>{unstagedFiles.length}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Info</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Main Worktree</span>
-                <span>{selectedWorktree.is_main ? 'Yes' : 'No'}</span>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Info</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Main Worktree</span>
+                  <span>{selectedWorktree.is_main ? 'Yes' : 'No'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Locked</span>
+                  <span>{selectedWorktree.is_locked ? 'Yes' : 'No'}</span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Locked</span>
-                <span>{selectedWorktree.is_locked ? 'Yes' : 'No'}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          <BranchSelector
+            worktreePath={selectedWorktree.path}
+            repoPath={currentRepo.path}
+            currentBranch={status?.branch ?? null}
+          />
+        </div>
+
+        {/* Right Column - Git Operations */}
+        <div className="space-y-4">
+          <RemoteActions
+            worktreePath={selectedWorktree.path}
+            repoPath={currentRepo.path}
+            ahead={status?.ahead ?? 0}
+            behind={status?.behind ?? 0}
+          />
+
+          <CommitPanel
+            worktreePath={selectedWorktree.path}
+            repoPath={currentRepo.path}
+            files={status?.files ?? []}
+          />
+        </div>
       </div>
     </main>
   );

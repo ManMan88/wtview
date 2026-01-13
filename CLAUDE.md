@@ -133,11 +133,21 @@ See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the full implementation plan.
   - WorktreeList and WorktreeCard components (`components/worktree/`)
   - AddWorktreeDialog and DeleteWorktreeDialog
 
+- [x] **Phase 4:** Git Operations
+  - RemoteActions component (`components/git/RemoteActions.tsx`) - fetch/pull/push with loading states and output display
+  - CommitPanel component (`components/git/CommitPanel.tsx`) - file staging/unstaging and commit creation
+  - BranchSelector component (`components/git/BranchSelector.tsx`) - branch checkout with local/remote grouping
+  - Integrated git components into MainContent layout
+
 ### Next Phase
 
-- [ ] **Phase 4:** Git Operations
-  - Build frontend components for git operations (RemoteActions, CommitPanel)
-  - Add branch checkout functionality with BranchSelector
+- [ ] **Phase 5:** Polish & Distribution
+  - Add loading states and error handling throughout UI
+  - Implement toast notifications for operation feedback
+  - Add keyboard shortcuts for common actions
+  - Configure Tauri bundler for all platforms
+  - Set up GitHub Actions for automated builds
+  - Create app icons for all platforms
 
 ## Test Coverage
 
