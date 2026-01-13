@@ -108,4 +108,62 @@ mod tests {
         let app_err: AppError = git_err.into();
         assert!(matches!(app_err, AppError::Git(_)));
     }
+
+    #[test]
+    fn test_app_error_display_not_a_repository() {
+        let err = AppError::NotARepository("/some/path".to_string());
+        assert_eq!(err.to_string(), "Not a git repository: /some/path");
+    }
+
+    #[test]
+    fn test_app_error_display_worktree_locked() {
+        let err = AppError::WorktreeLocked("Work in progress".to_string());
+        assert_eq!(err.to_string(), "Worktree is locked: Work in progress");
+    }
+
+    #[test]
+    fn test_app_error_display_branch_in_use() {
+        let err = AppError::BranchInUse("feature-branch".to_string());
+        assert_eq!(
+            err.to_string(),
+            "Branch already checked out in another worktree: feature-branch"
+        );
+    }
+
+    #[test]
+    fn test_app_error_display_worktree_not_found() {
+        let err = AppError::WorktreeNotFound("/path/to/worktree".to_string());
+        assert_eq!(err.to_string(), "Worktree not found: /path/to/worktree");
+    }
+
+    #[test]
+    fn test_app_error_serialize_not_a_repository() {
+        let err = AppError::NotARepository("/test/repo".to_string());
+        let serialized = serde_json::to_string(&err).unwrap();
+        assert_eq!(serialized, "\"Not a git repository: /test/repo\"");
+    }
+
+    #[test]
+    fn test_app_error_serialize_worktree_locked() {
+        let err = AppError::WorktreeLocked("Locked reason".to_string());
+        let serialized = serde_json::to_string(&err).unwrap();
+        assert_eq!(serialized, "\"Worktree is locked: Locked reason\"");
+    }
+
+    #[test]
+    fn test_app_error_serialize_branch_in_use() {
+        let err = AppError::BranchInUse("main".to_string());
+        let serialized = serde_json::to_string(&err).unwrap();
+        assert_eq!(
+            serialized,
+            "\"Branch already checked out in another worktree: main\""
+        );
+    }
+
+    #[test]
+    fn test_app_error_serialize_worktree_not_found() {
+        let err = AppError::WorktreeNotFound("/missing".to_string());
+        let serialized = serde_json::to_string(&err).unwrap();
+        assert_eq!(serialized, "\"Worktree not found: /missing\"");
+    }
 }

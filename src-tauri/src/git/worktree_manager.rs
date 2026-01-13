@@ -541,4 +541,270 @@ mod tests {
         // Now should have uncommitted changes
         assert!(has_uncommitted_changes(repo_path).expect("Failed to check changes"));
     }
+
+    // ==================== Lock/Unlock Worktree Tests ====================
+
+    #[test]
+    fn test_lock_worktree_without_reason() {
+        let temp_dir = create_test_repo();
+        let repo_path = temp_dir.path().to_str().unwrap();
+
+        // Create a worktree
+        let worktree_path = temp_dir.path().parent().unwrap().join("lock-test-wt");
+        add_worktree(
+            repo_path,
+            worktree_path.to_str().unwrap(),
+            "lock-test-branch",
+            true,
+        )
+        .expect("Failed to add worktree");
+
+        // Lock the worktree without a reason
+        let result = lock_worktree(repo_path, worktree_path.to_str().unwrap(), None);
+        assert!(result.is_ok());
+
+        // Verify it's locked
+        let worktrees = list_worktrees(repo_path).expect("Failed to list worktrees");
+        let locked_wt = worktrees
+            .iter()
+            .find(|wt| wt.path == worktree_path.to_str().unwrap())
+            .expect("Worktree not found");
+        assert!(locked_wt.is_locked);
+
+        // Cleanup
+        StdCommand::new("git")
+            .current_dir(repo_path)
+            .args(["worktree", "unlock", worktree_path.to_str().unwrap()])
+            .output()
+            .expect("Failed to unlock worktree");
+
+        StdCommand::new("git")
+            .current_dir(repo_path)
+            .args(["worktree", "remove", worktree_path.to_str().unwrap()])
+            .output()
+            .expect("Failed to remove worktree");
+    }
+
+    #[test]
+    fn test_lock_worktree_with_reason() {
+        let temp_dir = create_test_repo();
+        let repo_path = temp_dir.path().to_str().unwrap();
+
+        // Create a worktree
+        let worktree_path = temp_dir.path().parent().unwrap().join("lock-reason-wt");
+        add_worktree(
+            repo_path,
+            worktree_path.to_str().unwrap(),
+            "lock-reason-branch",
+            true,
+        )
+        .expect("Failed to add worktree");
+
+        // Lock the worktree with a reason
+        let result = lock_worktree(
+            repo_path,
+            worktree_path.to_str().unwrap(),
+            Some("Work in progress - do not remove"),
+        );
+        assert!(result.is_ok());
+
+        // Verify it's locked
+        let worktrees = list_worktrees(repo_path).expect("Failed to list worktrees");
+        let locked_wt = worktrees
+            .iter()
+            .find(|wt| wt.path == worktree_path.to_str().unwrap())
+            .expect("Worktree not found");
+        assert!(locked_wt.is_locked);
+
+        // Cleanup
+        StdCommand::new("git")
+            .current_dir(repo_path)
+            .args(["worktree", "unlock", worktree_path.to_str().unwrap()])
+            .output()
+            .expect("Failed to unlock worktree");
+
+        StdCommand::new("git")
+            .current_dir(repo_path)
+            .args(["worktree", "remove", worktree_path.to_str().unwrap()])
+            .output()
+            .expect("Failed to remove worktree");
+    }
+
+    #[test]
+    fn test_lock_already_locked_worktree() {
+        let temp_dir = create_test_repo();
+        let repo_path = temp_dir.path().to_str().unwrap();
+
+        // Create and lock a worktree
+        let worktree_path = temp_dir.path().parent().unwrap().join("already-locked-wt");
+        add_worktree(
+            repo_path,
+            worktree_path.to_str().unwrap(),
+            "already-locked-branch",
+            true,
+        )
+        .expect("Failed to add worktree");
+
+        lock_worktree(repo_path, worktree_path.to_str().unwrap(), None)
+            .expect("Failed to lock worktree");
+
+        // Try to lock again - should fail
+        let result = lock_worktree(repo_path, worktree_path.to_str().unwrap(), None);
+        assert!(result.is_err());
+
+        // Cleanup
+        StdCommand::new("git")
+            .current_dir(repo_path)
+            .args(["worktree", "unlock", worktree_path.to_str().unwrap()])
+            .output()
+            .expect("Failed to unlock worktree");
+
+        StdCommand::new("git")
+            .current_dir(repo_path)
+            .args(["worktree", "remove", worktree_path.to_str().unwrap()])
+            .output()
+            .expect("Failed to remove worktree");
+    }
+
+    #[test]
+    fn test_unlock_worktree() {
+        let temp_dir = create_test_repo();
+        let repo_path = temp_dir.path().to_str().unwrap();
+
+        // Create and lock a worktree
+        let worktree_path = temp_dir.path().parent().unwrap().join("unlock-test-wt");
+        add_worktree(
+            repo_path,
+            worktree_path.to_str().unwrap(),
+            "unlock-test-branch",
+            true,
+        )
+        .expect("Failed to add worktree");
+
+        lock_worktree(repo_path, worktree_path.to_str().unwrap(), None)
+            .expect("Failed to lock worktree");
+
+        // Verify it's locked
+        let worktrees_before = list_worktrees(repo_path).expect("Failed to list worktrees");
+        let locked_wt = worktrees_before
+            .iter()
+            .find(|wt| wt.path == worktree_path.to_str().unwrap())
+            .expect("Worktree not found");
+        assert!(locked_wt.is_locked);
+
+        // Unlock the worktree
+        let result = unlock_worktree(repo_path, worktree_path.to_str().unwrap());
+        assert!(result.is_ok());
+
+        // Verify it's unlocked
+        let worktrees_after = list_worktrees(repo_path).expect("Failed to list worktrees");
+        let unlocked_wt = worktrees_after
+            .iter()
+            .find(|wt| wt.path == worktree_path.to_str().unwrap())
+            .expect("Worktree not found");
+        assert!(!unlocked_wt.is_locked);
+
+        // Cleanup
+        StdCommand::new("git")
+            .current_dir(repo_path)
+            .args(["worktree", "remove", worktree_path.to_str().unwrap()])
+            .output()
+            .expect("Failed to remove worktree");
+    }
+
+    #[test]
+    fn test_unlock_not_locked_worktree() {
+        let temp_dir = create_test_repo();
+        let repo_path = temp_dir.path().to_str().unwrap();
+
+        // Create a worktree (not locked)
+        let worktree_path = temp_dir.path().parent().unwrap().join("not-locked-wt");
+        add_worktree(
+            repo_path,
+            worktree_path.to_str().unwrap(),
+            "not-locked-branch",
+            true,
+        )
+        .expect("Failed to add worktree");
+
+        // Try to unlock - should fail because it's not locked
+        let result = unlock_worktree(repo_path, worktree_path.to_str().unwrap());
+        assert!(result.is_err());
+
+        // Cleanup
+        StdCommand::new("git")
+            .current_dir(repo_path)
+            .args(["worktree", "remove", worktree_path.to_str().unwrap()])
+            .output()
+            .expect("Failed to remove worktree");
+    }
+
+    #[test]
+    fn test_lock_invalid_worktree() {
+        let temp_dir = create_test_repo();
+        let repo_path = temp_dir.path().to_str().unwrap();
+
+        // Try to lock a non-existent worktree
+        let result = lock_worktree(repo_path, "/nonexistent/worktree", None);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_unlock_invalid_worktree() {
+        let temp_dir = create_test_repo();
+        let repo_path = temp_dir.path().to_str().unwrap();
+
+        // Try to unlock a non-existent worktree
+        let result = unlock_worktree(repo_path, "/nonexistent/worktree");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_list_worktrees_shows_locked_status() {
+        let temp_dir = create_test_repo();
+        let repo_path = temp_dir.path().to_str().unwrap();
+
+        // Create a worktree
+        let worktree_path = temp_dir.path().parent().unwrap().join("status-test-wt");
+        add_worktree(
+            repo_path,
+            worktree_path.to_str().unwrap(),
+            "status-test-branch",
+            true,
+        )
+        .expect("Failed to add worktree");
+
+        // Initially should not be locked
+        let worktrees_unlocked = list_worktrees(repo_path).expect("Failed to list worktrees");
+        let wt_unlocked = worktrees_unlocked
+            .iter()
+            .find(|wt| wt.path == worktree_path.to_str().unwrap())
+            .expect("Worktree not found");
+        assert!(!wt_unlocked.is_locked);
+
+        // Lock it
+        lock_worktree(repo_path, worktree_path.to_str().unwrap(), None)
+            .expect("Failed to lock worktree");
+
+        // Should now be locked
+        let worktrees_locked = list_worktrees(repo_path).expect("Failed to list worktrees");
+        let wt_locked = worktrees_locked
+            .iter()
+            .find(|wt| wt.path == worktree_path.to_str().unwrap())
+            .expect("Worktree not found");
+        assert!(wt_locked.is_locked);
+
+        // Cleanup
+        StdCommand::new("git")
+            .current_dir(repo_path)
+            .args(["worktree", "unlock", worktree_path.to_str().unwrap()])
+            .output()
+            .expect("Failed to unlock worktree");
+
+        StdCommand::new("git")
+            .current_dir(repo_path)
+            .args(["worktree", "remove", worktree_path.to_str().unwrap()])
+            .output()
+            .expect("Failed to remove worktree");
+    }
 }

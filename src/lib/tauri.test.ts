@@ -1,9 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import {
+  selectRepository,
+  openRepository,
+  validateRepo,
   listWorktrees,
   addWorktree,
   removeWorktree,
+  lockWorktree,
+  unlockWorktree,
   gitFetch,
   gitPull,
   gitPush,
@@ -16,6 +21,7 @@ import {
   type WorktreeInfo,
   type GitStatusResult,
   type BranchInfo,
+  type RepositoryInfo,
 } from "./tauri";
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -28,6 +34,104 @@ describe("Tauri API wrappers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
+
+  // ==================== Repository Commands ====================
+
+  describe("selectRepository", () => {
+    it("calls invoke and returns repository info", async () => {
+      const mockRepo: RepositoryInfo = {
+        path: "/home/user/my-repo",
+        name: "my-repo",
+        is_bare: false,
+      };
+      mockInvoke.mockResolvedValue(mockRepo);
+
+      const result = await selectRepository();
+
+      expect(mockInvoke).toHaveBeenCalledWith("select_repository");
+      expect(result).toEqual(mockRepo);
+    });
+
+    it("returns null when user cancels dialog", async () => {
+      mockInvoke.mockResolvedValue(null);
+
+      const result = await selectRepository();
+
+      expect(result).toBeNull();
+    });
+
+    it("propagates errors from invoke", async () => {
+      mockInvoke.mockRejectedValue(new Error("Dialog failed"));
+
+      await expect(selectRepository()).rejects.toThrow("Dialog failed");
+    });
+  });
+
+  describe("openRepository", () => {
+    it("calls invoke with correct parameters", async () => {
+      const mockRepo: RepositoryInfo = {
+        path: "/home/user/project",
+        name: "project",
+        is_bare: false,
+      };
+      mockInvoke.mockResolvedValue(mockRepo);
+
+      const result = await openRepository("/home/user/project");
+
+      expect(mockInvoke).toHaveBeenCalledWith("open_repository", {
+        path: "/home/user/project",
+      });
+      expect(result).toEqual(mockRepo);
+    });
+
+    it("handles bare repository", async () => {
+      const mockRepo: RepositoryInfo = {
+        path: "/home/user/bare.git",
+        name: "bare.git",
+        is_bare: true,
+      };
+      mockInvoke.mockResolvedValue(mockRepo);
+
+      const result = await openRepository("/home/user/bare.git");
+
+      expect(result.is_bare).toBe(true);
+    });
+
+    it("propagates errors for invalid path", async () => {
+      mockInvoke.mockRejectedValue(new Error("Not a git repository"));
+
+      await expect(openRepository("/invalid/path")).rejects.toThrow("Not a git repository");
+    });
+  });
+
+  describe("validateRepo", () => {
+    it("returns true for valid repository", async () => {
+      mockInvoke.mockResolvedValue(true);
+
+      const result = await validateRepo("/home/user/valid-repo");
+
+      expect(mockInvoke).toHaveBeenCalledWith("validate_repo", {
+        path: "/home/user/valid-repo",
+      });
+      expect(result).toBe(true);
+    });
+
+    it("returns false for non-repository path", async () => {
+      mockInvoke.mockResolvedValue(false);
+
+      const result = await validateRepo("/home/user/not-a-repo");
+
+      expect(result).toBe(false);
+    });
+
+    it("propagates errors from invoke", async () => {
+      mockInvoke.mockRejectedValue(new Error("Path does not exist"));
+
+      await expect(validateRepo("/nonexistent")).rejects.toThrow("Path does not exist");
+    });
+  });
+
+  // ==================== Worktree Commands ====================
 
   describe("listWorktrees", () => {
     it("calls invoke with correct command and parameters", async () => {
@@ -49,6 +153,20 @@ describe("Tauri API wrappers", () => {
       const result = await listWorktrees("/repo");
 
       expect(result).toEqual([]);
+    });
+
+    it("returns worktrees with locked status", async () => {
+      const mockWorktrees: WorktreeInfo[] = [
+        { path: "/repo", branch: "main", is_main: true, is_locked: false },
+        { path: "/repo-locked", branch: "locked-branch", is_main: false, is_locked: true },
+      ];
+      mockInvoke.mockResolvedValue(mockWorktrees);
+
+      const result = await listWorktrees("/repo");
+
+      const lockedWorktree = result.find((wt) => wt.is_locked);
+      expect(lockedWorktree).toBeDefined();
+      expect(lockedWorktree?.path).toBe("/repo-locked");
     });
 
     it("propagates errors from invoke", async () => {
@@ -127,6 +245,75 @@ describe("Tauri API wrappers", () => {
       );
     });
   });
+
+  describe("lockWorktree", () => {
+    it("calls invoke without reason", async () => {
+      mockInvoke.mockResolvedValue(undefined);
+
+      await lockWorktree("/repo", "/repo-feature");
+
+      expect(mockInvoke).toHaveBeenCalledWith("lock_worktree", {
+        repoPath: "/repo",
+        worktreePath: "/repo-feature",
+        reason: undefined,
+      });
+    });
+
+    it("calls invoke with reason", async () => {
+      mockInvoke.mockResolvedValue(undefined);
+
+      await lockWorktree("/repo", "/repo-feature", "Work in progress");
+
+      expect(mockInvoke).toHaveBeenCalledWith("lock_worktree", {
+        repoPath: "/repo",
+        worktreePath: "/repo-feature",
+        reason: "Work in progress",
+      });
+    });
+
+    it("propagates errors when worktree already locked", async () => {
+      mockInvoke.mockRejectedValue(new Error("Worktree is already locked"));
+
+      await expect(lockWorktree("/repo", "/locked-wt")).rejects.toThrow(
+        "Worktree is already locked"
+      );
+    });
+
+    it("propagates errors when worktree not found", async () => {
+      mockInvoke.mockRejectedValue(new Error("Worktree not found"));
+
+      await expect(lockWorktree("/repo", "/nonexistent")).rejects.toThrow("Worktree not found");
+    });
+  });
+
+  describe("unlockWorktree", () => {
+    it("calls invoke with correct parameters", async () => {
+      mockInvoke.mockResolvedValue(undefined);
+
+      await unlockWorktree("/repo", "/repo-feature");
+
+      expect(mockInvoke).toHaveBeenCalledWith("unlock_worktree", {
+        repoPath: "/repo",
+        worktreePath: "/repo-feature",
+      });
+    });
+
+    it("propagates errors when worktree not locked", async () => {
+      mockInvoke.mockRejectedValue(new Error("Worktree is not locked"));
+
+      await expect(unlockWorktree("/repo", "/unlocked-wt")).rejects.toThrow(
+        "Worktree is not locked"
+      );
+    });
+
+    it("propagates errors when worktree not found", async () => {
+      mockInvoke.mockRejectedValue(new Error("Worktree not found"));
+
+      await expect(unlockWorktree("/repo", "/nonexistent")).rejects.toThrow("Worktree not found");
+    });
+  });
+
+  // ==================== Git Operations ====================
 
   describe("gitFetch", () => {
     it("calls invoke with correct command", async () => {

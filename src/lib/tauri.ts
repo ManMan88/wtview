@@ -27,6 +27,25 @@ export interface BranchInfo {
   is_current: boolean;
 }
 
+export interface RepositoryInfo {
+  path: string;
+  name: string;
+  is_bare: boolean;
+}
+
+// Repository commands
+export async function selectRepository(): Promise<RepositoryInfo | null> {
+  return invoke("select_repository");
+}
+
+export async function openRepository(path: string): Promise<RepositoryInfo> {
+  return invoke("open_repository", { path });
+}
+
+export async function validateRepo(path: string): Promise<boolean> {
+  return invoke("validate_repo", { path });
+}
+
 // Worktree commands
 export async function listWorktrees(repoPath: string): Promise<WorktreeInfo[]> {
   return invoke("list_worktrees", { repoPath });
@@ -47,6 +66,21 @@ export async function removeWorktree(
   force: boolean
 ): Promise<void> {
   return invoke("remove_worktree", { repoPath, worktreePath, force });
+}
+
+export async function lockWorktree(
+  repoPath: string,
+  worktreePath: string,
+  reason?: string
+): Promise<void> {
+  return invoke("lock_worktree", { repoPath, worktreePath, reason });
+}
+
+export async function unlockWorktree(
+  repoPath: string,
+  worktreePath: string
+): Promise<void> {
+  return invoke("unlock_worktree", { repoPath, worktreePath });
 }
 
 // Git operations
