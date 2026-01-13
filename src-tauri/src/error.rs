@@ -22,6 +22,7 @@ pub enum AppError {
     UncommittedChanges,
 
     #[error("Worktree is locked: {0}")]
+    #[allow(dead_code)]
     WorktreeLocked(String),
 
     #[error("Branch already checked out in another worktree: {0}")]
@@ -31,6 +32,7 @@ pub enum AppError {
     WorktreeNotFound(String),
 
     #[error("{0}")]
+    #[allow(dead_code)]
     Other(String),
 }
 
