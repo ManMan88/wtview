@@ -6,6 +6,7 @@ import { Header, Sidebar, MainContent } from '@/components/layout';
 import { AddWorktreeDialog, DeleteWorktreeDialog } from '@/components/worktree';
 import { useAppStore } from '@/stores/appStore';
 import { useWorktrees } from '@/hooks/useWorktrees';
+import { useTheme } from '@/hooks/useTheme';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,6 +23,8 @@ function AppContent() {
 
   const { currentRepo, selectedWorktreePath } = useAppStore();
   const { data: worktrees } = useWorktrees(currentRepo?.path ?? null);
+
+  useTheme();
 
   const selectedWorktree = worktrees?.find((wt) => wt.path === selectedWorktreePath) ?? null;
 

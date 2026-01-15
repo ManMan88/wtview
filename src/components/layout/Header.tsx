@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { selectRepository } from '@/lib/tauri';
 import { useAppStore } from '@/stores/appStore';
+import { ThemeToggle } from './ThemeToggle';
 
 export function Header() {
   const queryClient = useQueryClient();
@@ -45,6 +46,7 @@ export function Header() {
             <RefreshCw className="h-4 w-4" />
           </Button>
         )}
+        <ThemeToggle />
         <Button variant="outline" size="sm" onClick={handleOpenRepository}>
           <FolderOpen className="mr-2 h-4 w-4" />
           Open Repository
