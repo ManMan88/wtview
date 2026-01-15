@@ -3,17 +3,21 @@ import { persist } from 'zustand/middleware';
 
 import type { RepositoryInfo } from '@/lib/tauri';
 
+export type Theme = 'light' | 'dark' | 'system';
+
 interface AppState {
   // State
   currentRepo: RepositoryInfo | null;
   selectedWorktreePath: string | null;
   recentRepos: string[];
+  theme: Theme;
 
   // Actions
   setCurrentRepo: (repo: RepositoryInfo | null) => void;
   selectWorktree: (path: string | null) => void;
   addRecentRepo: (path: string) => void;
   clearRecentRepos: () => void;
+  setTheme: (theme: Theme) => void;
 }
 
 const MAX_RECENT_REPOS = 10;
@@ -24,6 +28,7 @@ export const useAppStore = create<AppState>()(
       currentRepo: null,
       selectedWorktreePath: null,
       recentRepos: [],
+      theme: 'system',
 
       setCurrentRepo: (repo) =>
         set({
@@ -41,11 +46,14 @@ export const useAppStore = create<AppState>()(
       },
 
       clearRecentRepos: () => set({ recentRepos: [] }),
+
+      setTheme: (theme) => set({ theme }),
     }),
     {
       name: 'worktree-manager-storage',
       partialize: (state) => ({
         recentRepos: state.recentRepos,
+        theme: state.theme,
       }),
     }
   )
