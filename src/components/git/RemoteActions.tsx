@@ -55,7 +55,10 @@ export function RemoteActions({ worktreePath, repoPath, ahead, behind }: RemoteA
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Remote Operations</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <RefreshCw className="h-4 w-4 text-primary" />
+          Remote Operations
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex gap-2">
@@ -64,7 +67,7 @@ export function RemoteActions({ worktreePath, repoPath, ahead, behind }: RemoteA
             size="sm"
             onClick={handleFetch}
             disabled={isPending}
-            className="flex-1"
+            className="flex-1 rounded-lg border-border transition-all hover:border-primary hover:bg-primary/5"
           >
             {fetchMutation.isPending ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -78,7 +81,7 @@ export function RemoteActions({ worktreePath, repoPath, ahead, behind }: RemoteA
             size="sm"
             onClick={handlePull}
             disabled={isPending}
-            className="flex-1"
+            className="flex-1 rounded-lg border-border transition-all hover:border-info hover:bg-info/5"
           >
             {pullMutation.isPending ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -87,7 +90,7 @@ export function RemoteActions({ worktreePath, repoPath, ahead, behind }: RemoteA
             )}
             Pull
             {behind > 0 && (
-              <span className="ml-1 rounded-full bg-orange-500/20 px-1.5 py-0.5 text-xs text-orange-500">
+              <span className="ml-1 rounded-full bg-warning/20 px-1.5 py-0.5 text-xs font-medium text-warning">
                 {behind}
               </span>
             )}
@@ -97,7 +100,7 @@ export function RemoteActions({ worktreePath, repoPath, ahead, behind }: RemoteA
             size="sm"
             onClick={handlePush}
             disabled={isPending}
-            className="flex-1"
+            className="flex-1 rounded-lg border-border transition-all hover:border-success hover:bg-success/5"
           >
             {pushMutation.isPending ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -106,7 +109,7 @@ export function RemoteActions({ worktreePath, repoPath, ahead, behind }: RemoteA
             )}
             Push
             {ahead > 0 && (
-              <span className="ml-1 rounded-full bg-green-500/20 px-1.5 py-0.5 text-xs text-green-500">
+              <span className="ml-1 rounded-full bg-success/20 px-1.5 py-0.5 text-xs font-medium text-success">
                 {ahead}
               </span>
             )}
@@ -114,8 +117,8 @@ export function RemoteActions({ worktreePath, repoPath, ahead, behind }: RemoteA
         </div>
 
         {lastOutput && (
-          <div className="rounded-md bg-muted p-2 text-xs font-mono">
-            <pre className="whitespace-pre-wrap break-all">{lastOutput}</pre>
+          <div className="rounded-xl bg-muted/50 p-3 font-mono text-xs">
+            <pre className="whitespace-pre-wrap break-all text-muted-foreground">{lastOutput}</pre>
           </div>
         )}
       </CardContent>

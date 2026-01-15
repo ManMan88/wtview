@@ -24,20 +24,26 @@ export function ThemeToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" title="Toggle theme">
+        <Button
+          variant="ghost"
+          size="icon"
+          title="Toggle theme"
+          className="h-9 w-9 rounded-lg transition-colors hover:bg-accent"
+        >
           <CurrentIcon className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="rounded-xl">
         {themeOptions.map((option) => {
           const Icon = option.icon;
+          const isSelected = theme === option.value;
           return (
             <DropdownMenuItem
               key={option.value}
               onClick={() => setTheme(option.value)}
-              className={theme === option.value ? 'bg-accent' : ''}
+              className={`rounded-lg transition-colors ${isSelected ? 'bg-primary/10 text-primary' : ''}`}
             >
-              <Icon className="mr-2 h-4 w-4" />
+              <Icon className={`mr-2 h-4 w-4 ${isSelected ? 'text-primary' : ''}`} />
               {option.label}
             </DropdownMenuItem>
           );

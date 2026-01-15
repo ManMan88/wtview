@@ -91,15 +91,15 @@ export function CommitPanel({ worktreePath, repoPath, files }: CommitPanelProps)
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { label: string; className: string }> = {
-      modified: { label: 'M', className: 'bg-yellow-500/20 text-yellow-500' },
-      added: { label: 'A', className: 'bg-green-500/20 text-green-500' },
-      deleted: { label: 'D', className: 'bg-red-500/20 text-red-500' },
-      renamed: { label: 'R', className: 'bg-blue-500/20 text-blue-500' },
-      untracked: { label: '?', className: 'bg-gray-500/20 text-gray-500' },
+      modified: { label: 'M', className: 'bg-warning/20 text-warning' },
+      added: { label: 'A', className: 'bg-success/20 text-success' },
+      deleted: { label: 'D', className: 'bg-destructive/20 text-destructive' },
+      renamed: { label: 'R', className: 'bg-info/20 text-info' },
+      untracked: { label: '?', className: 'bg-muted-foreground/20 text-muted-foreground' },
     };
-    const info = statusMap[status.toLowerCase()] ?? { label: status[0], className: 'bg-gray-500/20 text-gray-500' };
+    const info = statusMap[status.toLowerCase()] ?? { label: status[0], className: 'bg-muted-foreground/20 text-muted-foreground' };
     return (
-      <span className={`rounded px-1.5 py-0.5 text-xs font-mono ${info.className}`}>
+      <span className={`rounded-md px-1.5 py-0.5 text-xs font-mono font-medium ${info.className}`}>
         {info.label}
       </span>
     );
@@ -109,10 +109,18 @@ export function CommitPanel({ worktreePath, repoPath, files }: CommitPanelProps)
     return (
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Changes</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <FileText className="h-4 w-4 text-primary" />
+            Changes
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">No changes detected</p>
+          <div className="flex flex-col items-center py-6 text-center">
+            <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
+              <FileText className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <p className="text-sm text-muted-foreground">No changes detected</p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -121,7 +129,13 @@ export function CommitPanel({ worktreePath, repoPath, files }: CommitPanelProps)
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Changes</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <FileText className="h-4 w-4 text-primary" />
+          Changes
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+            {files.length}
+          </span>
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Staged Files */}
@@ -142,19 +156,19 @@ export function CommitPanel({ worktreePath, repoPath, files }: CommitPanelProps)
               </Button>
             )}
           </div>
-          <div className="max-h-32 space-y-1 overflow-y-auto rounded-md border bg-muted/50 p-2">
+          <div className="max-h-32 space-y-1 overflow-y-auto rounded-xl border border-success/20 bg-success/5 p-2">
             {stagedFiles.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No staged changes</p>
+              <p className="py-2 text-center text-xs text-muted-foreground">No staged changes</p>
             ) : (
               stagedFiles.map((file) => (
                 <div
                   key={file.path}
-                  className="group flex items-center justify-between rounded px-1 hover:bg-muted"
+                  className="group flex items-center justify-between rounded-lg px-2 py-1 transition-colors hover:bg-success/10"
                 >
                   <div className="flex items-center gap-2 overflow-hidden">
-                    <FileText className="h-3 w-3 shrink-0 text-muted-foreground" />
+                    <FileText className="h-3 w-3 shrink-0 text-success" />
                     {getStatusBadge(file.status)}
-                    <span className="truncate text-xs" title={file.path}>
+                    <span className="truncate font-mono text-xs" title={file.path}>
                       {file.path}
                     </span>
                   </div>
@@ -163,7 +177,7 @@ export function CommitPanel({ worktreePath, repoPath, files }: CommitPanelProps)
                     size="icon"
                     onClick={() => handleUnstage(file.path)}
                     disabled={isStaging}
-                    className="h-5 w-5 opacity-0 group-hover:opacity-100"
+                    className="h-6 w-6 rounded-md opacity-0 transition-opacity group-hover:opacity-100"
                   >
                     <Minus className="h-3 w-3" />
                   </Button>
@@ -191,19 +205,19 @@ export function CommitPanel({ worktreePath, repoPath, files }: CommitPanelProps)
               </Button>
             )}
           </div>
-          <div className="max-h-32 space-y-1 overflow-y-auto rounded-md border bg-muted/50 p-2">
+          <div className="max-h-32 space-y-1 overflow-y-auto rounded-xl border border-border bg-muted/30 p-2">
             {unstagedFiles.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No unstaged changes</p>
+              <p className="py-2 text-center text-xs text-muted-foreground">No unstaged changes</p>
             ) : (
               unstagedFiles.map((file) => (
                 <div
                   key={file.path}
-                  className="group flex items-center justify-between rounded px-1 hover:bg-muted"
+                  className="group flex items-center justify-between rounded-lg px-2 py-1 transition-colors hover:bg-muted"
                 >
                   <div className="flex items-center gap-2 overflow-hidden">
                     <FileText className="h-3 w-3 shrink-0 text-muted-foreground" />
                     {getStatusBadge(file.status)}
-                    <span className="truncate text-xs" title={file.path}>
+                    <span className="truncate font-mono text-xs" title={file.path}>
                       {file.path}
                     </span>
                   </div>
@@ -212,7 +226,7 @@ export function CommitPanel({ worktreePath, repoPath, files }: CommitPanelProps)
                     size="icon"
                     onClick={() => handleStage(file.path)}
                     disabled={isStaging}
-                    className="h-5 w-5 opacity-0 group-hover:opacity-100"
+                    className="h-6 w-6 rounded-md opacity-0 transition-opacity group-hover:opacity-100"
                   >
                     <Plus className="h-3 w-3" />
                   </Button>
@@ -223,7 +237,7 @@ export function CommitPanel({ worktreePath, repoPath, files }: CommitPanelProps)
         </div>
 
         {/* Commit Form */}
-        <div className="space-y-2 border-t pt-3">
+        <div className="space-y-3 border-t border-border/50 pt-4">
           <Label htmlFor="commit-message" className="text-sm font-medium">
             Commit Message
           </Label>
@@ -240,15 +254,20 @@ export function CommitPanel({ worktreePath, repoPath, files }: CommitPanelProps)
                 }
               }}
               disabled={isCommitting}
+              className="rounded-lg"
             />
             <Button
               onClick={handleCommit}
               disabled={isCommitting || stagedFiles.length === 0 || !commitMessage.trim()}
+              className="rounded-lg bg-primary px-4 transition-all hover:bg-primary/90"
             >
               {isCommitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Send className="h-4 w-4" />
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Commit
+                </>
               )}
             </Button>
           </div>
