@@ -224,8 +224,8 @@ describe('CommitPanel', () => {
       });
 
       // Find the unstaged file row and click its stage button
-      const fileRow = screen.getByText('unstaged-file.ts').closest('div[class*="group"]');
-      const stageButton = within(fileRow!).getByRole('button');
+      const fileRow = screen.getByText('unstaged-file.ts').closest('div[class*="group"]') as HTMLElement;
+      const stageButton = within(fileRow).getByRole('button');
       await userEvent.click(stageButton);
 
       await waitFor(() => {
@@ -243,8 +243,8 @@ describe('CommitPanel', () => {
         wrapper: createWrapper(),
       });
 
-      const fileRow = screen.getByText('unstaged-file.ts').closest('div[class*="group"]');
-      const stageButton = within(fileRow!).getByRole('button');
+      const fileRow = screen.getByText('unstaged-file.ts').closest('div[class*="group"]') as HTMLElement;
+      const stageButton = within(fileRow).getByRole('button');
       await userEvent.click(stageButton);
 
       await waitFor(() => {
@@ -262,8 +262,8 @@ describe('CommitPanel', () => {
       });
 
       // Find the staged file row and click its unstage button
-      const fileRow = screen.getByText('staged-file.ts').closest('div[class*="group"]');
-      const unstageButton = within(fileRow!).getByRole('button');
+      const fileRow = screen.getByText('staged-file.ts').closest('div[class*="group"]') as HTMLElement;
+      const unstageButton = within(fileRow).getByRole('button');
       await userEvent.click(unstageButton);
 
       await waitFor(() => {
@@ -281,8 +281,8 @@ describe('CommitPanel', () => {
         wrapper: createWrapper(),
       });
 
-      const fileRow = screen.getByText('staged-file.ts').closest('div[class*="group"]');
-      const unstageButton = within(fileRow!).getByRole('button');
+      const fileRow = screen.getByText('staged-file.ts').closest('div[class*="group"]') as HTMLElement;
+      const unstageButton = within(fileRow).getByRole('button');
       await userEvent.click(unstageButton);
 
       await waitFor(() => {
