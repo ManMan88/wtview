@@ -13,10 +13,12 @@ pub struct RepositoryInfo {
 /// Opens a file dialog to select a git repository directory
 #[tauri::command]
 pub async fn select_repository(app: tauri::AppHandle) -> AppResult<Option<RepositoryInfo>> {
+    let home_dir = dirs::home_dir().unwrap_or_default();
     let folder = app
         .dialog()
         .file()
         .set_title("Select Git Repository")
+        .set_directory(home_dir)
         .blocking_pick_folder();
 
     match folder {
