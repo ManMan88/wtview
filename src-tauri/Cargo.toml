@@ -1,6 +1,6 @@
 [package]
 name = "wtview"
-version = "0.1.0"
+version = "0.1.1"
 description = "A cross-platform GUI application for managing git worktrees"
 authors = ["Ron Danon <rondanon@gmail.com>"]
 license = "MIT"
