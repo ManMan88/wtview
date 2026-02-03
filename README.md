@@ -29,10 +29,11 @@ Download the latest release for your platform:
 | Platform | Architecture | Download |
 |----------|--------------|----------|
 | Linux | x64 | [AppImage](https://github.com/ManMan88/wtview/releases/latest) / [.deb](https://github.com/ManMan88/wtview/releases/latest) |
-| Linux | ARM64 | [AppImage](https://github.com/ManMan88/wtview/releases/latest) / [.deb](https://github.com/ManMan88/wtview/releases/latest) |
-| macOS | Apple Silicon | [.dmg](https://github.com/ManMan88/wtview/releases/latest) |
-| macOS | Intel | [.dmg](https://github.com/ManMan88/wtview/releases/latest) |
 | Windows | x64 | [.msi](https://github.com/ManMan88/wtview/releases/latest) / [.exe](https://github.com/ManMan88/wtview/releases/latest) |
+| macOS | - | *Coming soon* |
+| Linux | ARM64 | *Coming soon* |
+
+> **Note:** macOS builds require code signing certificates for distribution. Linux ARM64 builds require cross-compilation setup. These will be added in a future release. In the meantime, you can [build from source](#build-from-source).
 
 ### Build from Source
 

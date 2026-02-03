@@ -49,15 +49,9 @@ jobs:
             target: x86_64-unknown-linux-gnu
             platform: linux-x86_64
 
-          # Linux ARM64 removed - cross-compilation requires complex setup
-          # Can be added later with proper cross-compilation toolchain or native ARM64 runner
-
-          - os: macos-latest
-            target: aarch64-apple-darwin
-            platform: macos-aarch64
-
-          # macOS x86_64 removed - macos-13 retired, macos-15-large requires payment
-          # Most Macs are now ARM-based; can add back with self-hosted runner if needed
+          # Linux ARM64 - requires cross-compilation toolchain or native ARM64 runner
+          # macOS - requires code signing certificates for distribution
+          # These will be added in a future release
 
           - os: windows-latest
             target: x86_64-pc-windows-msvc
