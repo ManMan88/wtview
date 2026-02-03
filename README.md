@@ -1,8 +1,10 @@
-# Git Worktree Manager
+# wtview - Git Worktree Manager
 
 A cross-platform desktop application for managing git worktrees, built with Tauri v2.
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+[![CI](https://github.com/ManMan88/wtview/actions/workflows/ci.yml/badge.svg)](https://github.com/ManMan88/wtview/actions/workflows/ci.yml)
+[![Release](https://github.com/ManMan88/wtview/actions/workflows/release.yml/badge.svg)](https://github.com/ManMan88/wtview/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ## Features
 
@@ -10,6 +12,7 @@ A cross-platform desktop application for managing git worktrees, built with Taur
 - **Branch Selection** - Create worktrees from existing or new branches
 - **Lock/Unlock** - Prevent accidental modifications to worktrees
 - **Git Status** - View ahead/behind counts, staged/unstaged changes
+- **Git Operations** - Fetch, pull, push, commit, and stage/unstage files
 - **Safety Checks** - Prevents deletion of worktrees with uncommitted changes
 - **Cross-Platform** - Runs on Linux, macOS, and Windows
 
@@ -21,7 +24,15 @@ A cross-platform desktop application for managing git worktrees, built with Taur
 
 ### Pre-built Binaries
 
-Download the latest release for your platform from the [Releases](https://github.com/yourusername/worktree-viewer/releases) page.
+Download the latest release for your platform:
+
+| Platform | Architecture | Download |
+|----------|--------------|----------|
+| Linux | x64 | [AppImage](https://github.com/ManMan88/wtview/releases/latest) / [.deb](https://github.com/ManMan88/wtview/releases/latest) |
+| Linux | ARM64 | [AppImage](https://github.com/ManMan88/wtview/releases/latest) / [.deb](https://github.com/ManMan88/wtview/releases/latest) |
+| macOS | Apple Silicon | [.dmg](https://github.com/ManMan88/wtview/releases/latest) |
+| macOS | Intel | [.dmg](https://github.com/ManMan88/wtview/releases/latest) |
+| Windows | x64 | [.msi](https://github.com/ManMan88/wtview/releases/latest) / [.exe](https://github.com/ManMan88/wtview/releases/latest) |
 
 ### Build from Source
 
@@ -35,8 +46,8 @@ Download the latest release for your platform from the [Releases](https://github
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/worktree-viewer.git
-cd worktree-viewer
+git clone https://github.com/ManMan88/wtview.git
+cd wtview
 
 # Install dependencies
 npm install
@@ -90,7 +101,7 @@ cargo fmt                   # Rust
 ## Project Structure
 
 ```
-worktree_viewer/
+wtview/
 ├── src/                    # Frontend (React/TypeScript)
 │   ├── components/         # UI components
 │   │   ├── ui/             # shadcn/ui (do not modify)
@@ -116,7 +127,11 @@ worktree_viewer/
 
 ## Contributing
 
-Contributions are welcome! Please read the style guides before submitting PRs.
+Contributions are welcome! Please read the [Contributing Guide](CONTRIBUTING.md) and our [Code of Conduct](CODE_OF_CONDUCT.md) before submitting PRs.
+
+## Author
+
+**Ron Danon** - [GitHub](https://github.com/ManMan88) - rondanon@gmail.com
 
 ## License
 

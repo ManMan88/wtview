@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Git Worktree Manager",
+  "productName": "wtview",
   "version": "0.1.0",
-  "identifier": "com.worktree-viewer.app",
+  "identifier": "com.manman88.wtview",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -13,7 +13,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "Git Worktree Manager",
+        "title": "wtview - Git Worktree Manager",
         "width": 1200,
         "height": 800,
         "minWidth": 800,
@@ -29,14 +29,33 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "publisher": "Ron Danon",
+    "copyright": "Copyright © 2025 Ron Danon",
+    "category": "DeveloperTool",
+    "shortDescription": "Git worktree management GUI",
+    "longDescription": "A cross-platform desktop application for managing git worktrees. Create, delete, lock, and manage worktrees with an intuitive interface.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
-      "icons/128x128@2x.png"
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
     ],
     "linux": {
       "appimage": {
         "bundleMediaFramework": false
+      },
+      "deb": {
+        "section": "devel",
+        "priority": "optional"
+      }
+    },
+    "macOS": {
+      "minimumSystemVersion": "10.15"
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
       }
     }
   }

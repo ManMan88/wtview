@@ -1,8 +1,27 @@
 {
-  "name": "worktree-viewer",
-  "private": true,
+  "name": "wtview",
+  "private": false,
   "version": "0.1.0",
   "type": "module",
+  "description": "A cross-platform desktop application for managing git worktrees",
+  "author": "Ron Danon <rondanon@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ManMan88/wtview.git"
+  },
+  "homepage": "https://github.com/ManMan88/wtview",
+  "bugs": {
+    "url": "https://github.com/ManMan88/wtview/issues"
+  },
+  "keywords": [
+    "git",
+    "worktree",
+    "tauri",
+    "desktop",
+    "gui",
+    "cross-platform"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -12,7 +31,8 @@
     "tauri:build": "tauri build",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css}\""
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",
