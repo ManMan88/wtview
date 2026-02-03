@@ -1,0 +1,63 @@
+name: Bug Report
+description: Report a bug in wtview
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this bug! Please provide as much detail as possible to help us investigate.
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: What operating system are you running?
+      options:
+        - Linux
+        - macOS
+        - Windows
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: wtview Version
+      description: What version of wtview are you using? (e.g., 0.1.0)
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the bug
+      placeholder: |
+        1. Open wtview
+        2. Select a repository
+        3. Click on...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should happen?
+      placeholder: "The application should..."
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happens?
+      placeholder: "Instead, the application..."
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and Screenshots
+      description: |
+        Attach any relevant error messages, logs, or screenshots.
+        Tip: You can paste images or log files directly into this field.
+      placeholder: "Paste logs or drag/drop images here"
