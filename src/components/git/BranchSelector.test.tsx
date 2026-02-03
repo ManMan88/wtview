@@ -191,7 +191,7 @@ describe('BranchSelector', () => {
       });
     });
 
-    it('shows (current) indicator for current branch', async () => {
+    it('shows current indicator for current branch', async () => {
       render(<BranchSelector {...defaultProps} />, { wrapper: createWrapper() });
 
       await waitFor(() => expect(mockInvoke).toHaveBeenCalled());
@@ -199,7 +199,7 @@ describe('BranchSelector', () => {
       await userEvent.click(screen.getByRole('combobox'));
 
       await waitFor(() => {
-        expect(screen.getByText('(current)')).toBeInTheDocument();
+        expect(screen.getByText('current')).toBeInTheDocument();
       });
     });
 
