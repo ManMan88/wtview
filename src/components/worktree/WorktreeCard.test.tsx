@@ -47,15 +47,16 @@ describe('WorktreeCard', () => {
     render(<WorktreeCard worktree={mockWorktree} isSelected={true} onSelect={vi.fn()} />);
 
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('bg-accent');
-    expect(button).toHaveClass('border-primary');
+    expect(button).toHaveClass('bg-primary/10');
+    expect(button).toHaveClass('border-primary/50');
   });
 
   it('does not apply selected styling when isSelected is false', () => {
     render(<WorktreeCard worktree={mockWorktree} isSelected={false} onSelect={vi.fn()} />);
 
     const button = screen.getByRole('button');
-    expect(button).not.toHaveClass('border-primary');
+    expect(button).not.toHaveClass('bg-primary/10');
+    expect(button).toHaveClass('border-transparent');
   });
 
   it('shows home icon for main worktree', () => {

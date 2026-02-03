@@ -84,7 +84,7 @@ describe('WorktreeList', () => {
 
     const buttons = screen.getAllByRole('button');
     const featureButton = buttons.find((btn) => btn.textContent?.includes('feature'));
-    expect(featureButton).toHaveClass('border-primary');
+    expect(featureButton).toHaveClass('border-primary/50');
   });
 
   it('calls selectWorktree when a worktree card is clicked', async () => {
